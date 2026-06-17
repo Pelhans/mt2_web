@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我叫MT2 - 网页版进阶版</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-layer bg-layer-a"></div>
+    <div class="bg-layer bg-layer-b"></div>
+
+    <div class="app">
+      <header class="topbar">
+        <div>
+          <h1>我叫MT2 · 网页版</h1>
+          <p class="subtitle">原作风格皮肤 + 装备符文 + 公会BOSS + 云端系统</p>
+        </div>
+        <div class="resource-panel">
+          <span>金币：<strong id="goldVal">0</strong></span>
+          <span>钻石：<strong id="gemVal">0</strong></span>
+          <span>进度：<strong id="progressVal">1-1</strong></span>
+          <span>战力：<strong id="teamPowerVal">0</strong></span>
+        </div>
+      </header>
+
+      <div class="page-tabs" id="pageTabs">
+        <button class="page-tab active" data-page="adventure">冒险</button>
+        <button class="page-tab" data-page="guild">公会</button>
+        <button class="page-tab" data-page="account">账号</button>
+      </div>
+
+      <main class="layout">
+        <section class="card roster-section page-panel active" data-page="adventure">
+          <div class="section-head">
+            <h2>英雄酒馆</h2>
+            <div class="actions-inline">
+              <button id="recruitGoldBtn">金币招募 (200)</button>
+              <button id="recruitGemBtn" class="accent">钻石招募 (20)</button>
+            </div>
+          </div>
+
+          <div id="rosterGrid" class="roster-grid"></div>
+
+          <div class="hero-detail" id="heroDetail">
+            <p>点击英雄查看详情</p>
+          </div>
+
+          <div class="upgrade-grid">
+            <button id="upgradeHeroBtn">升级英雄</button>
+            <button id="upWeaponBtn">强化武器</button>
+            <button id="upArmorBtn">强化护甲</button>
+            <button id="upRuneBtn" class="accent">强化符文</button>
+            <button id="upSkillBtn" class="accent">强化技能</button>
+          </div>
+
+          <div class="upgrade-hints">
+            <span id="upgradeCostHint">升级花费：-</span>
+            <span id="equipCostHint">装备花费：-</span>
+            <span id="runeCostHint">符文花费：-</span>
+            <span id="skillCostHint">技能花费：-</span>
+          </div>
+        </section>
+
+        <section class="card stage-section page-panel active" data-page="adventure">
+          <div class="section-head">
+            <h2>远征副本</h2>
+          </div>
+          <div id="stageList" class="stage-list"></div>
+        </section>
+
+        <section class="card resource-dungeon-section page-panel active" data-page="adventure">
+          <div class="section-head">
+            <h2>日常 / 周常副本</h2>
+            <span id="resourceResetHint" class="minor-text">每日 00:00 / 每周一重置</span>
+          </div>
+          <div id="resourceDungeonList" class="resource-dungeon-list"></div>
+        </section>
+
+        <section class="card battle-section wide-card page-panel active" data-page="adventure">
+          <div class="section-head">
+            <h2>出战阵容</h2>
+            <div class="actions-inline">
+              <button id="playAnimDemoBtn">动画演示</button>
+              <button id="startBattleBtn" class="accent">开始战斗</button>
+              <div class="auto-battle-controls">
+                <label class="auto-battle-label">
+                  连续战斗
+                  <select id="autoBattleCount">
+                    <option value="5">5次</option>
+                    <option value="10" selected>10次</option>
+                    <option value="20">20次</option>
+                    <option value="50">50次</option>
+                  </select>
+                </label>
+                <button id="autoBattleBtn" class="accent">挂机战斗</button>
+                <button id="autoBattleStopBtn" class="danger" style="display:none;">停止</button>
+                <span id="autoBattleProgress" class="minor-text" style="display:none;"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="team-selectors">
+            <label>
+              前排
+              <select id="slot0"></select>
+            </label>
+            <label>
+              副前排
+              <select id="slot1"></select>
+            </label>
+            <label>
+              中排
+              <select id="slot2"></select>
+            </label>
+            <label>
+              副后排
+              <select id="slot3"></select>
+            </label>
+            <label>
+              后排
+              <select id="slot4"></select>
+            </label>
+          </div>
+
+          <div class="battle-main">
+            <div class="battlefield-wrap">
+              <div class="battlefield">
+                <div>
+                  <h3>我方队伍</h3>
+                  <div id="allyBoard" class="unit-board"></div>
+                </div>
+                <div>
+                  <h3>敌方队伍</h3>
+                  <div id="enemyBoard" class="unit-board"></div>
+                </div>
+              </div>
+              <div id="battleCinematicLayer" class="battle-cinematic-layer"></div>
+              <div id="battleFxLayer" class="battlefx-layer"></div>
+            </div>
+            <div class="battle-log-panel">
+              <h3>战斗日志</h3>
+              <div id="battleLog" class="battle-log"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card guild-section page-panel single-wide" data-page="guild">
+          <div class="section-head">
+            <h2>公会BOSS</h2>
+            <button id="refreshBossBtn">刷新状态</button>
+          </div>
+
+          <div class="boss-panel">
+            <div class="boss-name" id="bossName">黑龙军团长·古雷曼</div>
+            <div class="boss-hpbar">
+              <div id="bossHpFill" class="boss-hpfill"></div>
+            </div>
+            <div class="boss-meta">
+              <span id="bossHpText">0 / 0</span>
+              <span id="bossSeasonText">赛季 1</span>
+            </div>
+            <button id="bossAttackBtn" class="accent">挑战公会BOSS</button>
+            <p id="bossContribution" class="minor-text">我的累计伤害：0</p>
+          </div>
+
+          <div class="section-head sub-head">
+            <h3>排行榜</h3>
+            <button id="submitRankBtn">上传战力</button>
+          </div>
+          <p id="leaderSeasonText" class="minor-text">赛季信息加载中...</p>
+          <div id="leaderboardList" class="leaderboard-list"></div>
+        </section>
+
+        <section class="card cloud-section page-panel single-wide" data-page="account">
+          <div class="section-head">
+            <h2>账号与云存档</h2>
+          </div>
+
+          <div class="account-form">
+            <label>
+              用户名
+              <input id="usernameInput" type="text" maxlength="18" placeholder="输入用户名" />
+            </label>
+            <label>
+              密码
+              <input id="passwordInput" type="password" maxlength="32" placeholder="输入密码" />
+            </label>
+          </div>
+
+          <div class="actions-inline">
+            <button id="registerBtn">注册</button>
+            <button id="loginBtn" class="accent">登录</button>
+            <button id="logoutBtn">退出</button>
+          </div>
+
+          <p id="accountHint" class="minor-text">未登录</p>
+
+          <div class="cloud-actions">
+            <button id="cloudSaveBtn">上传云存档</button>
+            <button id="cloudLoadBtn" class="accent">拉取云存档</button>
+          </div>
+
+          <p id="cloudHint" class="minor-text">云端未同步</p>
+
+          <div class="section-head sub-head">
+            <h3>奖励邮件</h3>
+            <button id="refreshMailBtn">刷新邮件</button>
+          </div>
+          <div id="mailList" class="mail-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

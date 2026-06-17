@@ -1,0 +1,251 @@
+{
+  "users": [
+    {
+      "id": "d8c1b12e127e92e9",
+      "username": "catpaw_test_user",
+      "salt": "43da79ecea966a0b",
+      "passwordHash": "ab75c34ef88a9b2beb6ee878c38645665181459b67d3c467a3546628894c7656",
+      "createdAt": 1781587556362
+    },
+    {
+      "id": "a6c77ba2678b9ef7",
+      "username": "pelhans",
+      "salt": "bfd11fe98fabb3fc",
+      "passwordHash": "a3f59cb6b7a64bf4bc7a0be46692905bab146e30c8234ac7177fd535a5dcc676",
+      "createdAt": 1781611487831
+    }
+  ],
+  "sessions": {
+    "4ec9b5a396d935c31f443438fbe663bd40dfa78ed3aa672a": "d8c1b12e127e92e9",
+    "e546a4096c29bd38b8dc101111de4d2efe4480f7c6a693e6": "a6c77ba2678b9ef7",
+    "098c83d669d08138153b4036140c3d0130a06a5ff973c3e2": "a6c77ba2678b9ef7"
+  },
+  "saves": {
+    "d8c1b12e127e92e9": {
+      "gold": 999,
+      "gem": 88,
+      "unlockedStage": 4,
+      "selectedStage": 3,
+      "selectedHero": "amt",
+      "team": [
+        "amt",
+        "shaman",
+        "hunter"
+      ],
+      "heroes": {
+        "amt": {
+          "level": 8,
+          "exp": 10,
+          "stars": 2,
+          "weaponLv": 1,
+          "armorLv": 1,
+          "runeLv": 1
+        }
+      }
+    },
+    "a6c77ba2678b9ef7": {
+      "gold": 140142,
+      "gem": 18,
+      "unlockedStage": 8,
+      "selectedStage": 8,
+      "selectedHero": "shaman",
+      "team": [
+        "amt",
+        "shaman",
+        "healer"
+      ],
+      "heroes": {
+        "amt": {
+          "level": 60,
+          "exp": 41780,
+          "stars": 3,
+          "weaponLv": 10,
+          "armorLv": 10,
+          "runeLv": 10,
+          "skillLv": 10
+        },
+        "shaman": {
+          "level": 60,
+          "exp": 41832,
+          "stars": 4,
+          "weaponLv": 10,
+          "armorLv": 10,
+          "runeLv": 6,
+          "skillLv": 9
+        },
+        "hunter": {
+          "level": 60,
+          "exp": 33226,
+          "stars": 5,
+          "weaponLv": 5,
+          "armorLv": 0,
+          "runeLv": 1,
+          "skillLv": 3
+        },
+        "healer": {
+          "level": 60,
+          "exp": 41844,
+          "stars": 5,
+          "weaponLv": 6,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 4
+        },
+        "gunner": {
+          "level": 60,
+          "exp": 21448,
+          "stars": 5,
+          "weaponLv": 6,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "monk": {
+          "level": 1,
+          "exp": 0,
+          "stars": 5,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "warrior": {
+          "level": 1,
+          "exp": 0,
+          "stars": 5,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "necromancer": {
+          "level": 1,
+          "exp": 0,
+          "stars": 1,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "shadow": {
+          "level": 1,
+          "exp": 0,
+          "stars": 3,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "mage": {
+          "level": 1,
+          "exp": 0,
+          "stars": 3,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "frost": {
+          "level": 1,
+          "exp": 0,
+          "stars": 3,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "assassin": {
+          "level": 1,
+          "exp": 0,
+          "stars": 4,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "bard": {
+          "level": 1,
+          "exp": 0,
+          "stars": 3,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "paladin": {
+          "level": 1,
+          "exp": 0,
+          "stars": 1,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "mech": {
+          "level": 1,
+          "exp": 0,
+          "stars": 2,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        },
+        "druid": {
+          "level": 1,
+          "exp": 0,
+          "stars": 1,
+          "weaponLv": 0,
+          "armorLv": 0,
+          "runeLv": 0,
+          "skillLv": 1
+        }
+      }
+    }
+  },
+  "leaderboard": {
+    "a6c77ba2678b9ef7": {
+      "userId": "a6c77ba2678b9ef7",
+      "username": "pelhans",
+      "power": 70188,
+      "stage": 15,
+      "updatedAt": 1781663304315
+    }
+  },
+  "mails": {
+    "d8c1b12e127e92e9": [
+      {
+        "id": "season-S1-d8c1b12e127e92e9-1",
+        "title": "赛季 S1 结算奖励",
+        "body": "恭喜你在赛季 S1 排行榜中获得第 1 名！",
+        "reward": {
+          "gold": 8000,
+          "gem": 80
+        },
+        "claimed": true,
+        "createdAt": 1781592666484
+      }
+    ]
+  },
+  "season": {
+    "lastSettledWeek": "2026-W25",
+    "currentSeason": 2,
+    "settledLeaderboards": {
+      "S1": [
+        {
+          "userId": "d8c1b12e127e92e9",
+          "username": "catpaw_test_user",
+          "power": 12345,
+          "stage": 6
+        }
+      ]
+    }
+  },
+  "guildBoss": {
+    "season": 1,
+    "maxHp": 250000,
+    "hp": 245006,
+    "contributions": {
+      "d8c1b12e127e92e9": 4994
+    }
+  }
+}
