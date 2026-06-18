@@ -297,14 +297,14 @@ const ENEMY_LIBRARY = {
 const MAX_STAGE_CAP = 999999;
 const STAGE_NAME_POOL = ["林地", "灰烬", "迷雾", "深渊", "龙眠", "远古", "虚空", "星辉", "暮色", "凛冬"];
 const STAGE_ENEMY_PATTERNS = [
-  ["slime", "slime", "wolf"],
-  ["wolf", "skeleton", "caster"],
-  ["guard", "wolf", "caster"],
-  ["guard", "caster", "boss1"],
-  ["guard", "boss1", "skeleton"],
-  ["titan", "caster", "boss2"],
-  ["demon", "boss1", "boss2"],
-  ["titan", "demon", "boss2"],
+  ["slime", "slime", "wolf", "slime", "wolf"],
+  ["wolf", "skeleton", "caster", "wolf", "skeleton"],
+  ["guard", "wolf", "caster", "skeleton", "wolf"],
+  ["guard", "caster", "boss1", "wolf", "guard"],
+  ["guard", "boss1", "skeleton", "caster", "guard"],
+  ["titan", "caster", "boss2", "guard", "skeleton"],
+  ["demon", "boss1", "boss2", "caster", "titan"],
+  ["titan", "demon", "boss2", "boss1", "guard"],
 ];
 
 const RESOURCE_DUNGEONS = [
@@ -862,7 +862,8 @@ function renderStages() {
     const stage = getStageConfig(stageId);
     const unlocked = stage.id <= state.unlockedStage;
     const isActive = stage.id === state.selectedStage;
-    const recPower = 3200 + stage.id * 1250;
+    const enemyCountFactor = stage.enemies.length / 3;
+    const recPower = Math.round((3200 + stage.id * 1250) * enemyCountFactor);
 
     const card = document.createElement("div");
     card.className = "stage-card";
@@ -1177,16 +1178,18 @@ function getCinematicPosition(side, index) {
     { x: 15, y: 66 },
   ];
   const enemyPos = [
-    { x: 54, y: 64 },
-    { x: 67, y: 49 },
-    { x: 80, y: 63 },
+    { x: 52, y: 66 },
+    { x: 60, y: 52 },
+    { x: 68, y: 40 },
+    { x: 77, y: 52 },
+    { x: 85, y: 66 },
   ];
   const source = side === "ally" ? allyPos : enemyPos;
   return source[index] || source[Math.floor(source.length / 2)];
 }
 
 function ensureCinematicSquad(units, side) {
-  const cap = side === "ally" ? 5 : 3;
+  const cap = 5;
   const normalized = units.slice(0, cap).map((unit, idx) => ({
     ...unit,
     side,
