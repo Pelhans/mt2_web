@@ -605,12 +605,12 @@ function applyGameData(snapshot, saveToLocal) {
 
 function normalizeHeroOwn(own) {
   return {
-    level: clamp(Number(own?.level) || 1, 1, 60),
+    level: Math.max(1, Number(own?.level) || 1),
     exp: Math.max(0, Number(own?.exp) || 0),
     stars: clamp(Number(own?.stars) || 1, 1, 5),
-    weaponLv: clamp(Number(own?.weaponLv) || 0, 0, 20),
-    armorLv: clamp(Number(own?.armorLv) || 0, 0, 20),
-    runeLv: clamp(Number(own?.runeLv) || 0, 0, 20),
+    weaponLv: Math.max(0, Number(own?.weaponLv) || 0),
+    armorLv: Math.max(0, Number(own?.armorLv) || 0),
+    runeLv: Math.max(0, Number(own?.runeLv) || 0),
     skillLv: Math.max(1, Number(own?.skillLv) || 1),
   };
 }
@@ -792,7 +792,18 @@ function getSkillCost(heroId) {
   const own = state.heroes[heroId];
   if (!own) return Infinity;
   const lv = Math.max(1, Number(own.skillLv) || 1);
-  return Math.round(18 + Math.pow(lv, 1.22) * 9);
+  if (lv <= 30) {
+    return Math.round(60 + lv * 28);
+  }
+
+  const stage1End = 60 + 30 * 28;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.46) * 28);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.46) * 28;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.14) * 44 + Math.log2(extraLv + 1) * 34);
 }
 
 function getSkillDescription(heroId, heroStat) {
@@ -846,10 +857,10 @@ function renderHeroDetail() {
     refs.skillCostHint.textContent = `技能花费：${skillCost} 钻石`;
   }
 
-  refs.upgradeHeroBtn.disabled = state.gold < upCost || hero.level >= 60;
-  refs.upWeaponBtn.disabled = state.gold < weaponCost || hero.weaponLv >= 20;
-  refs.upArmorBtn.disabled = state.gold < armorCost || hero.armorLv >= 20;
-  refs.upRuneBtn.disabled = state.gem < runeCost || hero.runeLv >= 20;
+  refs.upgradeHeroBtn.disabled = state.gold < upCost;
+  refs.upWeaponBtn.disabled = state.gold < weaponCost;
+  refs.upArmorBtn.disabled = state.gold < armorCost;
+  refs.upRuneBtn.disabled = state.gem < runeCost;
   if (refs.upSkillBtn) {
     refs.upSkillBtn.disabled = state.gem < skillCost;
   }
@@ -1741,13 +1752,18 @@ function stopAutoBattle() {
 
 function grantTeamExp(amount) {
   const levelUps = [];
+  const LEVEL_UP_CAP_PER_BATTLE = 6;
+
   state.team.forEach((heroId) => {
     const own = state.heroes[heroId];
     if (!own) return;
+
     own.exp += amount;
-    while (own.level < 60 && own.exp >= expNeed(own.level)) {
+    let gainedThisBattle = 0;
+    while (own.exp >= expNeed(own.level) && gainedThisBattle < LEVEL_UP_CAP_PER_BATTLE) {
       own.exp -= expNeed(own.level);
       own.level += 1;
+      gainedThisBattle += 1;
       levelUps.push(`${getHeroById(heroId).name} Lv.${own.level}`);
     }
   });
@@ -1758,48 +1774,110 @@ function grantTeamExp(amount) {
 }
 
 function expNeed(level) {
-  return 32 + level * 14;
+  const lv = Math.max(1, Number(level) || 1);
+  if (lv <= 30) {
+    return Math.round(260 + lv * 55);
+  }
+
+  const stage1End = 260 + 30 * 55;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.52) * 86);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.52) * 86;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.24) * 190 + Math.log2(extraLv + 1) * 520);
 }
 
 function getUpgradeCost(heroId) {
   const own = state.heroes[heroId];
   if (!own) return Infinity;
-  return 120 + own.level * 65;
+  const lv = Math.max(1, Number(own.level) || 1);
+  if (lv <= 30) {
+    return Math.round(260 + lv * 130);
+  }
+
+  const stage1End = 260 + 30 * 130;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.55) * 280);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.55) * 280;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.18) * 420 + Math.log2(extraLv + 1) * 360);
 }
 
 function getWeaponCost(heroId) {
   const own = state.heroes[heroId];
   if (!own) return Infinity;
-  return 140 + own.weaponLv * 95;
+  const lv = Math.max(1, Number(own.weaponLv) + 1 || 1);
+  if (lv <= 30) {
+    return Math.round(300 + lv * 170);
+  }
+
+  const stage1End = 300 + 30 * 170;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.5) * 240);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.5) * 240;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.16) * 330 + Math.log2(extraLv + 1) * 280);
 }
 
 function getArmorCost(heroId) {
   const own = state.heroes[heroId];
   if (!own) return Infinity;
-  return 130 + own.armorLv * 90;
+  const lv = Math.max(1, Number(own.armorLv) + 1 || 1);
+  if (lv <= 30) {
+    return Math.round(280 + lv * 155);
+  }
+
+  const stage1End = 280 + 30 * 155;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.48) * 225);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.48) * 225;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.15) * 310 + Math.log2(extraLv + 1) * 260);
 }
 
 function getRuneCost(heroId) {
   const own = state.heroes[heroId];
   if (!own) return Infinity;
-  return 12 + own.runeLv * 8;
+  const lv = Math.max(1, Number(own.runeLv) + 1 || 1);
+  if (lv <= 30) {
+    return Math.round(40 + lv * 18);
+  }
+
+  const stage1End = 40 + 30 * 18;
+  if (lv <= 100) {
+    return Math.round(stage1End + Math.pow(lv - 30, 1.42) * 22);
+  }
+
+  const stage2End = stage1End + Math.pow(70, 1.42) * 22;
+  const extraLv = lv - 100;
+  return Math.round(stage2End + Math.pow(extraLv, 1.12) * 32 + Math.log2(extraLv + 1) * 26);
 }
 
 function recruitByGold() {
-  if (state.gold < 200) {
+  const cost = 1000000;
+  if (state.gold < cost) {
     appendLog("金币不足，无法招募", "log-lose");
     return;
   }
-  state.gold -= 200;
+  state.gold -= cost;
   recruitHero("gold");
 }
 
 function recruitByGem() {
-  if (state.gem < 20) {
+  const cost = 1000;
+  if (state.gem < cost) {
     appendLog("钻石不足，无法招募", "log-lose");
     return;
   }
-  state.gem -= 20;
+  state.gem -= cost;
   recruitHero("gem");
 }
 
@@ -1840,11 +1918,6 @@ function upgradeHero() {
   const heroId = state.selectedHero;
   const own = state.heroes[heroId];
   if (!own) return;
-  if (own.level >= 60) {
-    appendLog("该英雄已达到等级上限", "log-lose");
-    return;
-  }
-
   const cost = getUpgradeCost(heroId);
   if (state.gold < cost) {
     appendLog("金币不足，升级失败", "log-lose");
@@ -1862,11 +1935,6 @@ function upgradeWeapon() {
   const heroId = state.selectedHero;
   const own = state.heroes[heroId];
   if (!own) return;
-  if (own.weaponLv >= 20) {
-    appendLog("武器已强化至上限", "log-lose");
-    return;
-  }
-
   const cost = getWeaponCost(heroId);
   if (state.gold < cost) {
     appendLog("金币不足，无法强化武器", "log-lose");
@@ -1884,11 +1952,6 @@ function upgradeArmor() {
   const heroId = state.selectedHero;
   const own = state.heroes[heroId];
   if (!own) return;
-  if (own.armorLv >= 20) {
-    appendLog("护甲已强化至上限", "log-lose");
-    return;
-  }
-
   const cost = getArmorCost(heroId);
   if (state.gold < cost) {
     appendLog("金币不足，无法强化护甲", "log-lose");
@@ -1906,11 +1969,6 @@ function upgradeRune() {
   const heroId = state.selectedHero;
   const own = state.heroes[heroId];
   if (!own) return;
-  if (own.runeLv >= 20) {
-    appendLog("符文已强化至上限", "log-lose");
-    return;
-  }
-
   const cost = getRuneCost(heroId);
   if (state.gem < cost) {
     appendLog("钻石不足，无法强化符文", "log-lose");
@@ -2444,3 +2502,4 @@ if (!state.logs.length) {
 refreshLeaderboard().catch(() => {});
 refreshBossState().catch(() => {});
 refreshMails().catch(() => {});
+
