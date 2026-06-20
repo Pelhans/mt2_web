@@ -11,7 +11,7 @@ const HERO_POOL = [
     role: "坦克",
     quality: "SSR",
     avatar: "🛡️",
-    portrait: "./assets/heroes/amt_q.png",
+    portrait: "./assets/heroes/amt_q.jpg",
     artwork: "./assets/heroes/amt_art.png",
     hp: 1550,
     atk: 128,
