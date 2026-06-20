@@ -729,11 +729,13 @@ function renderResources() {
   refs.teamPowerVal.textContent = String(calcTeamPower());
 }
 
+function getSafeImgMarkup(className, src, alt, fallbackText) {
+  if (!src) return `<span class="${className}">${fallbackText}</span>`;
+  return `<img class="${className}" src="${src}" alt="${alt}" decoding="async" loading="eager" referrerpolicy="no-referrer" onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src='${src}'.replace(/\\.jpg(\\?.*)?$/i,'.png$1').replace(/\\.jpeg(\\?.*)?$/i,'.png$1');return;}this.style.display='none';if(this.nextElementSibling){this.nextElementSibling.style.display='flex';}" /><span class="${className} fallback" style="display:none;">${fallbackText}</span>`;
+}
+
 function getHeroAvatarMarkup(hero, className) {
-  if (hero.portrait) {
-    return `<img class="${className}" src="${hero.portrait}" alt="${hero.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="${className} fallback" style="display:none;">${hero.avatar || "⚔️"}</span>`;
-  }
-  return `<span class="${className}">${hero.avatar || "⚔️"}</span>`;
+  return getSafeImgMarkup(className, hero.portrait, hero.name, hero.avatar || "⚔️");
 }
 
 function renderRoster() {
@@ -836,7 +838,7 @@ function renderHeroDetail() {
 
   refs.heroDetail.innerHTML = `
     <div class="hero-art-wrap">
-      <img class="hero-art" src="${hero.artwork || ""}" alt="${hero.name}" onerror="this.style.display='none'" />
+      <img class="hero-art" src="${hero.artwork || ""}" alt="${hero.name}" decoding="async" loading="eager" referrerpolicy="no-referrer" onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src=(this.src||'').replace(/\.jpg(\?.*)?$/i,'.png$1').replace(/\.jpeg(\?.*)?$/i,'.png$1');return;}this.style.display='none'" />
     </div>
     <p><strong>${hero.avatar} ${hero.name}</strong> (${hero.role})</p>
     <p>等级：Lv.${hero.level} · 星级：${"★".repeat(hero.stars)}</p>
@@ -1100,9 +1102,7 @@ function createUnitCard(unit) {
   card.dataset.unitId = unit.id;
   card.dataset.side = unit.side;
 
-  const portraitMarkup = unit.portrait
-    ? `<img class="unit-portrait" src="${unit.portrait}" alt="${unit.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="unit-portrait fallback" style="display:none;">${unit.avatar || "⚔️"}</span>`
-    : `<span class="unit-portrait">${unit.avatar || "⚔️"}</span>`;
+  const portraitMarkup = getSafeImgMarkup("unit-portrait", unit.portrait, unit.name, unit.avatar || "⚔️");
 
   card.innerHTML = `
     <div class="unit-top">
@@ -1285,9 +1285,7 @@ function renderCinematicUnit(unit, side, index) {
   const pos = getCinematicPosition(side, index);
   const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
   const energyRate = clamp((unit.energy || 0) / 100, 0, 1);
-  const avatarMarkup = unit.portrait
-    ? `<img class="cin-unit-avatar" src="${unit.portrait}" alt="${unit.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="cin-unit-avatar fallback" style="display:none;">${unit.avatar || "⚔️"}</span>`
-    : `<span class="cin-unit-avatar">${unit.avatar || "⚔️"}</span>`;
+  const avatarMarkup = getSafeImgMarkup("cin-unit-avatar", unit.portrait, unit.name, unit.avatar || "⚔️");
   return `
     <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;">
       ${avatarMarkup}
@@ -1301,9 +1299,7 @@ function renderCinematicUnit(unit, side, index) {
 function renderBottomPortrait(unit) {
   const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
   const energyRate = clamp((unit.energy || 0) / 100, 0, 1);
-  const avatarMarkup = unit.portrait
-    ? `<img class="cin-portrait-avatar" src="${unit.portrait}" alt="${unit.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span class="cin-portrait-avatar fallback" style="display:none;">${unit.avatar || "⚔️"}</span>`
-    : `<span class="cin-portrait-avatar">${unit.avatar || "⚔️"}</span>`;
+  const avatarMarkup = getSafeImgMarkup("cin-portrait-avatar", unit.portrait, unit.name, unit.avatar || "⚔️");
   return `
     <div class="cin-portrait ${unit.isGhost ? "ghost" : ""}">
       ${avatarMarkup}
