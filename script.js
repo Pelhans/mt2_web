@@ -11,7 +11,7 @@ const HERO_POOL = [
     role: "坦克",
     quality: "SSR",
     avatar: "🛡️",
-    portrait: "./assets/heroes/amt_q.png",
+    portrait: "./assets/heroes/amt_q.jpg",
     artwork: "./assets/heroes/amt_art.png",
     hp: 1550,
     atk: 128,
@@ -1157,7 +1157,7 @@ function previewUnitFromHero(heroId) {
 
 function buildStageEnemies(stageId) {
   const stage = getStageConfig(stageId);
-  const grow = 1 + (stage.id - 1) * 0.1;
+  const grow = 1 + (stage.id - 1) * 0.34;
 
   return stage.enemies.map((enemyKey, idx) => {
     const base = ENEMY_LIBRARY[enemyKey];
