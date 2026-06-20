@@ -1036,6 +1036,45 @@ function dedupeTeam() {
   }
 }
 
+function updateUnitCard(card, unit) {
+  const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
+  const energyRate = unit.energy ? clamp(unit.energy / 100, 0, 1) : 0;
+
+  card.classList.toggle("dead", unit.hp <= 0);
+
+  const statusEl = card.querySelector(".unit-status");
+  if (statusEl) statusEl.textContent = unit.hp > 0 ? "战斗中" : "已倒下";
+
+  const hpTextEl = card.querySelector(".unit-hptext");
+  if (hpTextEl) hpTextEl.textContent = `HP: ${Math.max(0, Math.round(unit.hp))}/${unit.maxHp}`;
+
+  const hpFillEl = card.querySelector(".hp-fill");
+  if (hpFillEl) hpFillEl.style.width = `${Math.round(hpRate * 100)}%`;
+
+  const energyTextEl = card.querySelector(".unit-energytext");
+  if (energyTextEl) energyTextEl.textContent = `能量: ${Math.round(unit.energy || 0)}/100`;
+
+  const energyFillEl = card.querySelector(".energy-fill");
+  if (energyFillEl) energyFillEl.style.width = `${Math.round(energyRate * 100)}%`;
+}
+
+function upsertUnitBoard(boardEl, units) {
+  const existing = new Map(Array.from(boardEl.children).map((el) => [String(el.dataset.unitId), el]));
+
+  units.forEach((unit) => {
+    const unitId = String(unit.id);
+    let card = existing.get(unitId);
+    if (!card) {
+      card = createUnitCard(unit);
+    }
+    updateUnitCard(card, unit);
+    boardEl.appendChild(card);
+    existing.delete(unitId);
+  });
+
+  existing.forEach((el) => el.remove());
+}
+
 function renderBattlefield() {
   const battle = state.battle;
   const allies = battle ? battle.allies : state.team.map((heroId) => previewUnitFromHero(heroId)).filter(Boolean);
@@ -1043,10 +1082,8 @@ function renderBattlefield() {
     ? battle.enemies
     : buildStageEnemies(state.selectedStage).map((enemy) => ({ ...enemy, hp: enemy.maxHp, energy: 0 }));
 
-  refs.allyBoard.innerHTML = "";
-  refs.enemyBoard.innerHTML = "";
-  allies.forEach((unit) => refs.allyBoard.appendChild(createUnitCard(unit)));
-  enemies.forEach((unit) => refs.enemyBoard.appendChild(createUnitCard(unit)));
+  upsertUnitBoard(refs.allyBoard, allies);
+  upsertUnitBoard(refs.enemyBoard, enemies);
 
   refs.startBattleBtn.disabled = Boolean(state.battle) || state.cinematicRunning || autoBattleRunning;
   if (refs.playAnimDemoBtn) {
@@ -1058,12 +1095,8 @@ function renderBattlefield() {
 }
 
 function createUnitCard(unit) {
-  const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
-  const energyRate = unit.energy ? clamp(unit.energy / 100, 0, 1) : 0;
-
   const card = document.createElement("div");
   card.className = "unit-card";
-  if (unit.hp <= 0) card.classList.add("dead");
   card.dataset.unitId = unit.id;
   card.dataset.side = unit.side;
 
@@ -1080,14 +1113,15 @@ function createUnitCard(unit) {
           <small>${unit.role || "单位"}</small>
         </div>
       </div>
-      <small>${unit.hp > 0 ? "战斗中" : "已倒下"}</small>
+      <small class="unit-status"></small>
     </div>
-    <div>HP: ${Math.max(0, Math.round(unit.hp))}/${unit.maxHp}</div>
-    <div class="hp-bar"><div class="hp-fill" style="width:${Math.round(hpRate * 100)}%"></div></div>
-    <div>能量: ${Math.round(unit.energy || 0)}/100</div>
-    <div class="energy-bar"><div class="energy-fill" style="width:${Math.round(energyRate * 100)}%"></div></div>
+    <div class="unit-hptext"></div>
+    <div class="hp-bar"><div class="hp-fill"></div></div>
+    <div class="unit-energytext"></div>
+    <div class="energy-bar"><div class="energy-fill"></div></div>
   `;
 
+  updateUnitCard(card, unit);
   return card;
 }
 
