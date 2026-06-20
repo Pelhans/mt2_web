@@ -1123,7 +1123,7 @@ function previewUnitFromHero(heroId) {
 
 function buildStageEnemies(stageId) {
   const stage = getStageConfig(stageId);
-  const grow = 1 + (stage.id - 1) * 0.1;
+  const grow = 1 + (stage.id - 1) * 0.34;
 
   return stage.enemies.map((enemyKey, idx) => {
     const base = ENEMY_LIBRARY[enemyKey];
