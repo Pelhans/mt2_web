@@ -295,6 +295,7 @@ const ENEMY_LIBRARY = {
 };
 
 const MAX_STAGE_CAP = 999999;
+const BATTLE_SPEED_OPTIONS = [1, 1.5, 2, 3];
 const STAGE_NAME_POOL = ["林地", "灰烬", "迷雾", "深渊", "龙眠", "远古", "虚空", "星辉", "暮色", "凛冬"];
 const STAGE_ENEMY_PATTERNS = [
   ["slime", "slime", "wolf", "slime", "wolf"],
@@ -381,6 +382,7 @@ const state = {
   heroes: {},
   battle: null,
   cinematicRunning: false,
+  battleSpeed: 1,
   logs: [],
   leaderboard: [],
   leaderboardSeason: null,
@@ -438,6 +440,7 @@ const refs = {
   autoBattleBtn: document.getElementById("autoBattleBtn"),
   autoBattleStopBtn: document.getElementById("autoBattleStopBtn"),
   autoBattleCount: document.getElementById("autoBattleCount"),
+  battleSpeedSelect: document.getElementById("battleSpeedSelect"),
   autoBattleProgress: document.getElementById("autoBattleProgress"),
   refreshBossBtn: document.getElementById("refreshBossBtn"),
   bossAttackBtn: document.getElementById("bossAttackBtn"),
@@ -548,6 +551,37 @@ function saveLocalGame() {
   localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(serializeGameData()));
 }
 
+function normalizeBattleSpeed(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return BATTLE_SPEED_OPTIONS.reduce((best, cur) => (Math.abs(cur - num) < Math.abs(best - num) ? cur : best), BATTLE_SPEED_OPTIONS[0]);
+}
+
+function getBattleTickMs() {
+  const speed = normalizeBattleSpeed(state.battleSpeed);
+  return Math.max(180, Math.round(680 / speed));
+}
+
+function getBattleElapsedSeconds() {
+  const battle = state.battle;
+  if (!battle) return 0;
+  const elapsedMs = Date.now() - (battle.startedAt || Date.now());
+  return Math.max(0, elapsedMs / 1000);
+}
+
+function formatBattleClock(totalSeconds) {
+  const secs = Math.max(0, Math.floor(totalSeconds));
+  const mm = Math.floor(secs / 60);
+  const ss = secs % 60;
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
+function getBattleWave() {
+  const battle = state.battle;
+  if (!battle || !battle.turnCount) return 1;
+  return clamp(Math.floor((battle.turnCount - 1) / 10) + 1, 1, 3);
+}
+
 function serializeGameData() {
   return {
     gold: state.gold,
@@ -558,6 +592,7 @@ function serializeGameData() {
     team: [...state.team],
     heroes: state.heroes,
     dungeonProgress: state.dungeonProgress,
+    battleSpeed: state.battleSpeed,
     logs: state.logs,
   };
 }
@@ -587,6 +622,7 @@ function applyGameData(snapshot, saveToLocal) {
       type: typeof line?.type === "string" ? line.type : "",
     }))
     : [];
+  state.battleSpeed = normalizeBattleSpeed(snapshot.battleSpeed);
 
   if (snapshot.heroes && typeof snapshot.heroes === "object") {
     Object.entries(snapshot.heroes).forEach(([heroId, own]) => {
@@ -599,6 +635,8 @@ function applyGameData(snapshot, saveToLocal) {
   if (!state.selectedHero || !state.heroes[state.selectedHero]) {
     state.selectedHero = Object.keys(state.heroes)[0] || null;
   }
+
+  updateBattleSpeed(state.battleSpeed, { save: false });
 
   if (saveToLocal) saveLocalGame();
 }
@@ -1213,6 +1251,25 @@ function clearCinematicLayer() {
   refs.battleCinematicLayer.innerHTML = "";
 }
 
+function updateBattleSpeed(value, options = {}) {
+  state.battleSpeed = normalizeBattleSpeed(value);
+
+  if (refs.battleSpeedSelect) {
+    refs.battleSpeedSelect.value = String(state.battleSpeed);
+  }
+
+  if (state.battle?.timer) {
+    clearInterval(state.battle.timer);
+    state.battle.timer = setInterval(() => {
+      battleTick();
+    }, getBattleTickMs());
+  }
+
+  if (options.save !== false) {
+    saveLocalGame();
+  }
+}
+
 function getCinematicPosition(side, index) {
   // 5人阵：从前排到后排按横向铺开
   const allyPos = [
@@ -1292,13 +1349,23 @@ function renderCinematicUnit(unit, side, index) {
   const pos = getCinematicPosition(side, index);
   const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
   const energyRate = clamp((unit.energy || 0) / 100, 0, 1);
+  const depthRate = clamp((pos.y - 38) / 32, 0, 1);
+  const unitScale = (0.82 + depthRate * 0.36).toFixed(3);
+  const unitZ = Math.round(-20 + depthRate * 56);
+  const unitTilt = ((side === "ally" ? -9 : 9) + (0.5 - depthRate) * (side === "ally" ? -4 : 4)).toFixed(2);
+  const unitBlur = Math.max(0, (0.5 - depthRate) * 1.2).toFixed(2);
+  const floorScale = (0.72 + depthRate * 0.5).toFixed(3);
+  const floorOpacity = (0.22 + depthRate * 0.35).toFixed(2);
   const avatarMarkup = getSafeImgMarkup("cin-unit-avatar", unit.portrait, unit.name, unit.avatar || "⚔️");
   return `
-    <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;">
-      <div class="cin-unit-avatar-wrap">${avatarMarkup}</div>
-      <div class="cin-unit-name">${unit.name}</div>
-      <div class="cin-unit-hp"><div class="cin-unit-hpfill" style="width:${Math.round(hpRate * 100)}%;"></div></div>
-      <div class="cin-unit-energy"><div class="cin-unit-energyfill" style="width:${Math.round(energyRate * 100)}%;"></div></div>
+    <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;--unit-scale:${unitScale};--unit-z:${unitZ}px;--unit-tilt:${unitTilt}deg;--unit-blur:${unitBlur}px;--floor-scale:${floorScale};--floor-opacity:${floorOpacity};">
+      <div class="cin-unit-floor"></div>
+      <div class="cin-unit-body">
+        <div class="cin-unit-avatar-wrap">${avatarMarkup}</div>
+        <div class="cin-unit-name">${unit.name}</div>
+        <div class="cin-unit-hp"><div class="cin-unit-hpfill" style="width:${Math.round(hpRate * 100)}%;"></div></div>
+        <div class="cin-unit-energy"><div class="cin-unit-energyfill" style="width:${Math.round(energyRate * 100)}%;"></div></div>
+      </div>
     </div>
   `;
 }
@@ -1348,12 +1415,17 @@ function playCinematicAction(attacker, target, options) {
   const dy = targetPos.y - attackerPos.y;
   const slashAngle = Math.atan2(dy, dx) * (180 / Math.PI);
   const slashLen = Math.max(120, Math.min(440, Math.hypot(dx, dy) * 8));
-  const fightClock = String(68 + (state.selectedStage - 1) * 3).padStart(2, "0");
+  const fightClock = formatBattleClock(getBattleElapsedSeconds());
   const combo = Math.max(1, Math.round((options.value || 0) / 10000) + (options.crit ? 2 : 0) + (showSkill ? 1 : 0));
   const stageInfo = getStageConfig(state.selectedStage);
-  const wave = ((state.selectedStage - 1) % 3) + 1;
+  const wave = getBattleWave();
   const actionTag = isHeal ? "治疗技" : showSkill ? "必杀技" : "普通攻击";
-  const battleSpeed = autoBattleRunning ? "x2.0" : "x1.0";
+  const battleSpeed = `x${state.battleSpeed.toFixed(1)}`;
+  const midY = (attackerPos.y + targetPos.y) / 2;
+  const camYaw = clamp(dx * 0.12, -8, 8).toFixed(2);
+  const camPitch = clamp((58 - midY) * 0.42, -8, 8).toFixed(2);
+  const camRoll = clamp(dx * 0.05, -5, 5).toFixed(2);
+  const camZoom = (dramaticSkill ? 1.06 : showSkill ? 1.03 : 1).toFixed(3);
 
   const calcTeamRate = (team) => {
     const aliveTeam = team.filter((unit) => !unit.isGhost);
@@ -1379,15 +1451,23 @@ function playCinematicAction(attacker, target, options) {
       <div class="cin-bg"></div>
       <div class="cin-vignette"></div>
       <div class="cin-grain"></div>
-      <div class="cin-ground"></div>
-      <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
-      <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
+      <div class="cin-perspective ${dramaticSkill ? "focus" : ""}" style="--cam-yaw:${camYaw}deg;--cam-pitch:${camPitch}deg;--cam-roll:${camRoll}deg;--cam-zoom:${camZoom};">
+        <div class="cin-ground"></div>
+        <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
+        <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
+        <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
+        <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
+        <div class="cin-impact-wave" style="left:${targetPos.x}%;top:${targetPos.y}%;"></div>
+        <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
+        <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
+        <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
+      </div>
       <div class="cin-screen-flash ${isHeal ? "heal" : showSkill ? "skill" : ""}"></div>
       <div class="cin-top-panel">
         <div class="cin-stage-title">${stageInfo.name}</div>
         <div class="cin-top-meta">
           <span>WAVE ${wave}/3</span>
-          <span>TIME 01:${fightClock}</span>
+          <span>TIME ${fightClock}</span>
           <span>SPEED ${battleSpeed}</span>
         </div>
       </div>
@@ -1401,14 +1481,8 @@ function playCinematicAction(attacker, target, options) {
         <div class="cin-status-bar"><div class="cin-status-fill" style="width:${Math.round(enemyHpRate * 100)}%;"></div></div>
         <div class="cin-status-power">战力 ${formatCompactNumber(enemyPower)}</div>
       </div>
-      <div class="cin-action-tag">${actionTag}</div>
+      <div class="cin-action-tag">${actionTag} · ${battleSpeed}</div>
       <div class="cin-skill-banner">${bannerText}</div>
-      <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
-      <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
-      <div class="cin-impact-wave" style="left:${targetPos.x}%;top:${targetPos.y}%;"></div>
-      <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
-      <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
-      <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
       <div class="cin-bottom-bar">${allies.map((unit) => renderBottomPortrait(unit)).join("")}</div>
     </div>
   `;
@@ -1477,7 +1551,16 @@ async function playBattleAnimationDemo() {
   }
 
   const healer = demoAllies.find((unit) => unit.healPower) || demoAllies[1] || demoAllies[0];
+  const prevBattle = state.battle;
   state.cinematicRunning = true;
+  state.battle = {
+    allies: demoAllies,
+    enemies: demoEnemies,
+    queue: [],
+    timer: null,
+    turnCount: 0,
+    startedAt: Date.now(),
+  };
   cinematicTeamsOverride = { allies: demoAllies, enemies: demoEnemies };
   renderBattlefield();
   appendLog("开始播放MT2风格战斗动画演示", "log-win");
@@ -1493,6 +1576,7 @@ async function playBattleAnimationDemo() {
     ];
 
     for (const action of sequences) {
+      if (state.battle) state.battle.turnCount = (state.battle.turnCount || 0) + 1;
       action.attacker.energy = clamp((action.attacker.energy || 0) + 34, 0, 100);
 
       if (action.heal) {
@@ -1517,12 +1601,13 @@ async function playBattleAnimationDemo() {
         });
       }
 
-      await sleep(880);
+      await sleep(Math.max(260, Math.round(880 / state.battleSpeed)));
     }
 
     appendLog("演示结束：可点击开始战斗体验同款实时镜头", "log-win");
   } finally {
     cinematicTeamsOverride = null;
+    state.battle = prevBattle;
     state.cinematicRunning = false;
     clearCinematicLayer();
     renderBattlefield();
@@ -1577,19 +1662,23 @@ function startBattle() {
     enemies: buildStageEnemies(state.selectedStage),
     queue: [],
     timer: null,
+    turnCount: 0,
+    startedAt: Date.now(),
   };
 
-  appendLog(`开始挑战 1-${state.selectedStage} ${getStageName(state.selectedStage)}`);
+  appendLog(`开始挑战 1-${state.selectedStage} ${getStageName(state.selectedStage)}（速度 x${state.battleSpeed.toFixed(1)}）`);
   renderBattlefield();
 
   state.battle.timer = setInterval(() => {
     battleTick();
-  }, 680);
+  }, getBattleTickMs());
 }
 
 function battleTick() {
   const battle = state.battle;
   if (!battle) return;
+
+  battle.turnCount = (battle.turnCount || 0) + 1;
 
   const aliveAllies = battle.allies.filter((u) => u.hp > 0);
   const aliveEnemies = battle.enemies.filter((u) => u.hp > 0);
@@ -1817,7 +1906,7 @@ async function startAutoBattle() {
 
     appendLog(`挂机第 ${i + 1} 场：${win ? "胜利" : "失败"}`, win ? "log-win" : "log-lose");
 
-    await sleep(120);
+    await sleep(Math.max(50, Math.round(120 / state.battleSpeed)));
   }
 
   appendLog(
@@ -2552,6 +2641,12 @@ function bindEvents() {
   refs.startBattleBtn.onclick = startBattle;
   if (refs.autoBattleBtn) refs.autoBattleBtn.onclick = startAutoBattle;
   if (refs.autoBattleStopBtn) refs.autoBattleStopBtn.onclick = stopAutoBattle;
+  if (refs.battleSpeedSelect) {
+    refs.battleSpeedSelect.onchange = (event) => {
+      updateBattleSpeed(event.target.value);
+      appendLog(`战斗速度已调整为 x${state.battleSpeed.toFixed(1)}`, "log-win");
+    };
+  }
   if (refs.playAnimDemoBtn) {
     refs.playAnimDemoBtn.onclick = () => {
       playBattleAnimationDemo().catch(() => {});
@@ -2597,6 +2692,7 @@ function bindEvents() {
 }
 
 initState();
+updateBattleSpeed(state.battleSpeed, { save: false });
 bindEvents();
 renderAll();
 if (!state.logs.length) {
