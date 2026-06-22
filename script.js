@@ -136,7 +136,7 @@ const HERO_POOL = [
   },
   {
     id: "necromancer",
-    name: "亡语先知",
+    name: "玛德拉公主",
     role: "法师",
     quality: "SSR",
     avatar: "☠️",
@@ -169,8 +169,8 @@ const HERO_POOL = [
   },
   {
     id: "gunner",
-    name: "爆弹萝莉",
-    role: "射手",
+    name: "娇花",
+    role: "法师",
     quality: "SR",
     avatar: "💣",
     portrait: "./assets/heroes/gunner_q.png",
@@ -185,7 +185,7 @@ const HERO_POOL = [
   },
   {
     id: "monk",
-    name: "醉拳僧",
+    name: "埃隆霸",
     role: "战士",
     quality: "SR",
     avatar: "🥊",
@@ -201,7 +201,7 @@ const HERO_POOL = [
   },
   {
     id: "frost",
-    name: "冰霜魔女",
+    name: "寒冰王子",
     role: "法师",
     quality: "SSR",
     avatar: "❄️",
@@ -217,7 +217,7 @@ const HERO_POOL = [
   },
   {
     id: "bard",
-    name: "吟游诗人",
+    name: "神棍德",
     role: "辅助",
     quality: "SR",
     avatar: "🎵",
@@ -234,7 +234,7 @@ const HERO_POOL = [
   },
   {
     id: "berserker",
-    name: "狂兽战将",
+    name: "上古巨人",
     role: "战士",
     quality: "SSR",
     avatar: "🪓",
@@ -250,7 +250,7 @@ const HERO_POOL = [
   },
   {
     id: "shadow",
-    name: "影月行者",
+    name: "大囧龟",
     role: "刺客",
     quality: "SSR",
     avatar: "🌘",
@@ -266,7 +266,7 @@ const HERO_POOL = [
   },
   {
     id: "mech",
-    name: "机甲工匠",
+    name: "地中海",
     role: "射手",
     quality: "SR",
     avatar: "🤖",
