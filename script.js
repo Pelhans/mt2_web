@@ -1281,6 +1281,13 @@ function findCinematicUnit(layer, side, unitId) {
   return candidates.find((el) => el.dataset.cinId === String(unitId)) || null;
 }
 
+function formatCompactNumber(value) {
+  const num = Math.max(0, Number(value) || 0);
+  if (num >= 100000000) return `${(num / 100000000).toFixed(num >= 1000000000 ? 1 : 2)}亿`;
+  if (num >= 10000) return `${(num / 10000).toFixed(num >= 1000000 ? 1 : 2)}万`;
+  return String(Math.round(num));
+}
+
 function renderCinematicUnit(unit, side, index) {
   const pos = getCinematicPosition(side, index);
   const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
@@ -1343,16 +1350,58 @@ function playCinematicAction(attacker, target, options) {
   const slashLen = Math.max(120, Math.min(440, Math.hypot(dx, dy) * 8));
   const fightClock = String(68 + (state.selectedStage - 1) * 3).padStart(2, "0");
   const combo = Math.max(1, Math.round((options.value || 0) / 10000) + (options.crit ? 2 : 0) + (showSkill ? 1 : 0));
+  const stageInfo = getStageConfig(state.selectedStage);
+  const wave = ((state.selectedStage - 1) % 3) + 1;
+  const actionTag = isHeal ? "治疗技" : showSkill ? "必杀技" : "普通攻击";
+  const battleSpeed = autoBattleRunning ? "x2.0" : "x1.0";
+
+  const calcTeamRate = (team) => {
+    const aliveTeam = team.filter((unit) => !unit.isGhost);
+    const totalHp = aliveTeam.reduce((sum, unit) => sum + (Number(unit.hp) || 0), 0);
+    const totalMax = aliveTeam.reduce((sum, unit) => sum + (Number(unit.maxHp) || 0), 0);
+    return totalMax > 0 ? clamp(totalHp / totalMax, 0, 1) : 0;
+  };
+
+  const calcTeamPowerScore = (team) =>
+    team
+      .filter((unit) => !unit.isGhost)
+      .reduce((sum, unit) => sum + (Number(unit.maxHp) || 0) * 0.2 + (Number(unit.atk) || 0) * 2.6 + (Number(unit.def) || 0) * 1.2 + (Number(unit.speed) || 0) * 1.5, 0);
+
+  const allyAlive = allies.filter((unit) => !unit.isGhost && unit.hp > 0).length;
+  const enemyAlive = enemies.filter((unit) => !unit.isGhost && unit.hp > 0).length;
+  const allyHpRate = calcTeamRate(allies);
+  const enemyHpRate = calcTeamRate(enemies);
+  const allyPower = Math.round(calcTeamPowerScore(allies));
+  const enemyPower = Math.round(calcTeamPowerScore(enemies));
 
   layer.innerHTML = `
-    <div class="cin-stage">
+    <div class="cin-stage ${dramaticSkill ? "dramatic" : ""}">
       <div class="cin-bg"></div>
+      <div class="cin-vignette"></div>
+      <div class="cin-grain"></div>
       <div class="cin-ground"></div>
       <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
       <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
       <div class="cin-screen-flash ${isHeal ? "heal" : showSkill ? "skill" : ""}"></div>
-      <div class="cin-hud-left">⏱ 01:${fightClock}</div>
-      <div class="cin-hud-right">${showSkill ? "SP" : "AUTO"}</div>
+      <div class="cin-top-panel">
+        <div class="cin-stage-title">${stageInfo.name}</div>
+        <div class="cin-top-meta">
+          <span>WAVE ${wave}/3</span>
+          <span>TIME 01:${fightClock}</span>
+          <span>SPEED ${battleSpeed}</span>
+        </div>
+      </div>
+      <div class="cin-team-status ally">
+        <div class="cin-status-head"><span>我方</span><span>${allyAlive}/5</span></div>
+        <div class="cin-status-bar"><div class="cin-status-fill" style="width:${Math.round(allyHpRate * 100)}%;"></div></div>
+        <div class="cin-status-power">战力 ${formatCompactNumber(allyPower)}</div>
+      </div>
+      <div class="cin-team-status enemy">
+        <div class="cin-status-head"><span>敌方</span><span>${enemyAlive}/5</span></div>
+        <div class="cin-status-bar"><div class="cin-status-fill" style="width:${Math.round(enemyHpRate * 100)}%;"></div></div>
+        <div class="cin-status-power">战力 ${formatCompactNumber(enemyPower)}</div>
+      </div>
+      <div class="cin-action-tag">${actionTag}</div>
       <div class="cin-skill-banner">${bannerText}</div>
       <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
       <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
@@ -1360,11 +1409,6 @@ function playCinematicAction(attacker, target, options) {
       <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
       <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
       <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
-      <div class="cin-side-ui">
-        <span>战斗回放</span>
-        <span>特效全开</span>
-        <span>自动战斗</span>
-      </div>
       <div class="cin-bottom-bar">${allies.map((unit) => renderBottomPortrait(unit)).join("")}</div>
     </div>
   `;

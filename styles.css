@@ -495,6 +495,10 @@ input {
   transform: scale(1);
 }
 
+.battle-cinematic-layer.active .cin-stage {
+  animation: camDrift 1.2s ease-out;
+}
+
 .battle-cinematic-layer.skill-focus {
   transform: scale(1.03);
   filter: saturate(1.16) contrast(1.08);
@@ -503,6 +507,11 @@ input {
 .cin-stage {
   position: absolute;
   inset: 0;
+  isolation: isolate;
+}
+
+.cin-stage.dramatic {
+  filter: saturate(1.18) contrast(1.06);
 }
 
 .cin-screen-flash {
@@ -589,6 +598,26 @@ input {
     linear-gradient(180deg, rgba(20, 30, 52, 0.5), rgba(16, 20, 32, 0.86));
 }
 
+.cin-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 40%, rgba(5, 8, 16, 0.72) 100%);
+}
+
+.cin-grain {
+  position: absolute;
+  inset: -40px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.2;
+  mix-blend-mode: soft-light;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.18) 0.7px, transparent 0.7px);
+  background-size: 3px 3px;
+  animation: grainMove 0.5s steps(4) infinite;
+}
+
 .cin-blackout {
   position: absolute;
   inset: 0;
@@ -601,6 +630,7 @@ input {
 
 .cin-blackout.show {
   opacity: 1;
+  z-index: 6;
   animation: blackoutFade 0.9s ease forwards;
 }
 
@@ -625,6 +655,7 @@ input {
 
 .cin-spotlight.show {
   opacity: 1;
+  z-index: 7;
   animation: spotlightPulse 0.6s ease infinite alternate;
 }
 
@@ -640,42 +671,115 @@ input {
 }
 
 .cin-ground {
-position: absolute;
-left: 8%;
-right: 8%;
-bottom: 22%;
-height: 38%;
-border-radius: 50%;
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 22%;
+  height: 38%;
+  z-index: 1;
+  border-radius: 50%;
   border: 2px solid rgba(255, 203, 127, 0.35);
   box-shadow: inset 0 0 0 24px rgba(43, 49, 74, 0.46), 0 0 28px rgba(255, 181, 99, 0.24);
   background: radial-gradient(circle at center, rgba(255, 206, 132, 0.1), rgba(47, 59, 94, 0.4) 70%);
 }
 
-.cin-hud-left,
-.cin-hud-right {
+.cin-top-panel {
   position: absolute;
+  left: 50%;
   top: 10px;
-  z-index: 3;
-  padding: 4px 10px;
+  z-index: 8;
+  transform: translateX(-50%);
+  min-width: 380px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 230, 184, 0.45);
+  background: linear-gradient(180deg, rgba(30, 43, 72, 0.88), rgba(17, 27, 48, 0.86));
+  box-shadow: 0 10px 24px rgba(6, 12, 25, 0.5), inset 0 0 12px rgba(255, 214, 130, 0.16);
+}
+
+.cin-stage-title {
+  text-align: center;
+  color: #ffe0a8;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(255, 183, 99, 0.5);
+}
+
+.cin-top-meta {
+  margin-top: 5px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.cin-top-meta span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: rgba(234, 244, 255, 0.9);
+  border: 1px solid rgba(196, 225, 255, 0.36);
+  background: rgba(13, 19, 35, 0.66);
+}
+
+.cin-team-status {
+  position: absolute;
+  top: 60px;
+  width: 166px;
+  z-index: 8;
+  padding: 8px 10px;
   border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  background: rgba(14, 18, 31, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(12, 18, 33, 0.7);
+  backdrop-filter: blur(3px);
 }
 
-.cin-hud-left {
+.cin-team-status.ally {
   left: 10px;
+  box-shadow: 0 0 18px rgba(106, 174, 255, 0.22);
 }
 
-.cin-hud-right {
+.cin-team-status.enemy {
   right: 10px;
+  box-shadow: 0 0 18px rgba(255, 130, 156, 0.24);
+}
+
+.cin-status-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ecf5ff;
+}
+
+.cin-status-bar {
+  margin-top: 5px;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(6, 11, 21, 0.82);
+}
+
+.cin-status-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #61d6ff, #7d89ff);
+}
+
+.cin-team-status.enemy .cin-status-fill {
+  background: linear-gradient(90deg, #ff7aa4, #ffb779);
+}
+
+.cin-status-power {
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(224, 236, 255, 0.9);
 }
 
 .cin-team {
-position: absolute;
-inset: 0;
-z-index: 3;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
 }
 
 .cin-unit {
@@ -789,34 +893,37 @@ z-index: 3;
   text-shadow: 0 0 12px rgba(110, 255, 183, 0.5);
 }
 
-.cin-side-ui {
+.cin-action-tag {
   position: absolute;
-  right: 10px;
-  top: 40%;
-  z-index: 5;
-  display: grid;
-  gap: 6px;
-}
-
-.cin-side-ui span {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
+  left: 50%;
+  top: 22%;
+  z-index: 8;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
   font-size: 11px;
+  font-weight: 700;
   letter-spacing: 1px;
-  padding: 4px 3px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(17, 21, 34, 0.82);
+  color: #fff6de;
+  border: 1px solid rgba(255, 227, 180, 0.5);
+  background: linear-gradient(180deg, rgba(98, 60, 152, 0.86), rgba(54, 36, 92, 0.86));
+  box-shadow: 0 0 16px rgba(155, 128, 255, 0.4);
+  animation: actionTagPulse 0.72s ease;
 }
 
 .cin-bottom-bar {
   position: absolute;
   left: 8%;
-  right: 18%;
+  right: 8%;
   bottom: 6px;
-  z-index: 6;
+  z-index: 8;
   display: flex;
   gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(18, 25, 44, 0.66), rgba(12, 18, 33, 0.78));
+  backdrop-filter: blur(2px);
 }
 
 .cin-portrait {
@@ -1063,6 +1170,39 @@ z-index: 3;
   100% {
     opacity: 0;
     transform: translateX(-50%) translateY(4px) scale(0.96);
+  }
+}
+
+@keyframes grainMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(10px, -8px);
+  }
+}
+
+@keyframes camDrift {
+  0% {
+    transform: translateY(8px) scale(1.015);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes actionTagPulse {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.86);
+  }
+  28% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.03);
+  }
+  100% {
+    opacity: 0.94;
+    transform: translateX(-50%) scale(1);
   }
 }
 
