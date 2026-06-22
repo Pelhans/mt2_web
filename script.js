@@ -1288,7 +1288,7 @@ function renderCinematicUnit(unit, side, index) {
   const avatarMarkup = getSafeImgMarkup("cin-unit-avatar", unit.portrait, unit.name, unit.avatar || "⚔️");
   return `
     <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;">
-      ${avatarMarkup}
+      <div class="cin-unit-avatar-wrap">${avatarMarkup}</div>
       <div class="cin-unit-name">${unit.name}</div>
       <div class="cin-unit-hp"><div class="cin-unit-hpfill" style="width:${Math.round(hpRate * 100)}%;"></div></div>
       <div class="cin-unit-energy"><div class="cin-unit-energyfill" style="width:${Math.round(energyRate * 100)}%;"></div></div>
@@ -1314,6 +1314,7 @@ function playCinematicAction(attacker, target, options) {
   if (!layer || !attacker || !target) return;
 
   const { allies, enemies } = getCinematicTeams();
+  const attackerTeam = attacker.side === "ally" ? allies : enemies;
   const targetTeam = target.side === "ally" ? allies : enemies;
   const targetInTeam = targetTeam.find((unit) => unit.id === target.id);
   if (targetInTeam && Number.isFinite(options.targetRate)) {
@@ -1323,6 +1324,7 @@ function playCinematicAction(attacker, target, options) {
   const isHeal = Boolean(options.isHeal);
   const isMiss = Boolean(options.miss);
   const showSkill = Boolean(options.useSkill) || isHeal;
+  const dramaticSkill = showSkill && !isHeal;
   const bannerText = isHeal
     ? `${attacker.name} · 治疗祷言`
     : showSkill
@@ -1331,20 +1333,33 @@ function playCinematicAction(attacker, target, options) {
   const damageText = isMiss ? "MISS" : `${isHeal ? "+" : "-"}${Math.round(options.value)}${options.crit ? " 暴击" : ""}`;
   const damageClass = isHeal ? "cin-dmg cin-heal" : isMiss ? "cin-dmg miss" : "cin-dmg";
 
+  const attackerIndex = attackerTeam.findIndex((unit) => unit.id === attacker.id);
   const targetIndex = targetTeam.findIndex((unit) => unit.id === target.id);
-  const targetPos = getCinematicPosition(target.side, targetIndex < 0 ? 1 : targetIndex);
+  const attackerPos = getCinematicPosition(attacker.side, attackerIndex < 0 ? 2 : attackerIndex);
+  const targetPos = getCinematicPosition(target.side, targetIndex < 0 ? 2 : targetIndex);
+  const dx = targetPos.x - attackerPos.x;
+  const dy = targetPos.y - attackerPos.y;
+  const slashAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const slashLen = Math.max(120, Math.min(440, Math.hypot(dx, dy) * 8));
   const fightClock = String(68 + (state.selectedStage - 1) * 3).padStart(2, "0");
+  const combo = Math.max(1, Math.round((options.value || 0) / 10000) + (options.crit ? 2 : 0) + (showSkill ? 1 : 0));
 
   layer.innerHTML = `
     <div class="cin-stage">
       <div class="cin-bg"></div>
       <div class="cin-ground"></div>
+      <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
+      <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
+      <div class="cin-screen-flash ${isHeal ? "heal" : showSkill ? "skill" : ""}"></div>
       <div class="cin-hud-left">⏱ 01:${fightClock}</div>
-      <div class="cin-hud-right">0</div>
+      <div class="cin-hud-right">${showSkill ? "SP" : "AUTO"}</div>
       <div class="cin-skill-banner">${bannerText}</div>
       <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
       <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
+      <div class="cin-impact-wave" style="left:${targetPos.x}%;top:${targetPos.y}%;"></div>
+      <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
       <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
+      <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
       <div class="cin-side-ui">
         <span>战斗回放</span>
         <span>特效全开</span>
@@ -1358,30 +1373,46 @@ function playCinematicAction(attacker, target, options) {
   const targetEl = findCinematicUnit(layer, target.side, target.id);
   const bannerEl = layer.querySelector(".cin-skill-banner");
   const dmgEl = layer.querySelector(".cin-dmg");
+  const slashEl = layer.querySelector(".cin-slash");
+  const impactEl = layer.querySelector(".cin-impact-wave");
 
   layer.classList.add("active");
   requestAnimationFrame(() => {
     layer.classList.add("shake");
     if (showSkill) {
+      layer.classList.add("skill-focus");
       attackerEl?.classList.add("cast");
       bannerEl?.classList.add("show");
     } else {
       attackerEl?.classList.add("attack");
     }
-    targetEl?.classList.add("hit");
-    dmgEl?.classList.add("show");
+
+    const triggerImpact = () => {
+      targetEl?.classList.add("hit");
+      dmgEl?.classList.add("show");
+      slashEl?.classList.add("show");
+      impactEl?.classList.add("show");
+    };
+
+    if (dramaticSkill) {
+      setTimeout(triggerImpact, 120);
+    } else {
+      triggerImpact();
+    }
   });
 
+  const resetDelay = dramaticSkill ? 560 : 420;
   setTimeout(() => {
-    layer.classList.remove("shake");
+    layer.classList.remove("shake", "skill-focus");
     attackerEl?.classList.remove("attack", "cast");
     targetEl?.classList.remove("hit");
-  }, 360);
+  }, resetDelay);
 
   if (cinematicHideTimer) clearTimeout(cinematicHideTimer);
+  const hideDelay = options.holdMs || (dramaticSkill ? 980 : 880);
   cinematicHideTimer = setTimeout(() => {
-    layer.classList.remove("active", "shake");
-  }, options.holdMs || 760);
+    layer.classList.remove("active", "shake", "skill-focus");
+  }, hideDelay);
 }
 
 function sleep(ms) {
