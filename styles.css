@@ -508,6 +508,20 @@ input {
   position: absolute;
   inset: 0;
   isolation: isolate;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.cin-perspective {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.28s ease;
+  transform: rotateX(var(--cam-pitch, 0deg)) rotateY(var(--cam-yaw, 0deg)) rotateZ(var(--cam-roll, 0deg)) scale(var(--cam-zoom, 1));
+}
+
+.cin-perspective.focus {
+  filter: saturate(1.08);
 }
 
 .cin-stage.dramatic {
@@ -537,7 +551,7 @@ input {
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0.3);
+  transform: translate(-50%, -50%) translateZ(18px) scale(0.3);
   border: 2px solid rgba(255, 215, 153, 0.8);
   box-shadow: 0 0 22px rgba(255, 148, 110, 0.7);
   opacity: 0;
@@ -552,7 +566,7 @@ input {
   position: absolute;
   width: var(--slash-len, 180px);
   height: 8px;
-  transform: translate(-50%, -50%) rotate(var(--slash-rotate, 0deg)) scaleX(0.2);
+  transform: translate(-50%, -50%) translateZ(42px) rotate(var(--slash-rotate, 0deg)) scaleX(0.2);
   border-radius: 999px;
   opacity: 0;
   z-index: 6;
@@ -681,6 +695,8 @@ input {
   border: 2px solid rgba(255, 203, 127, 0.35);
   box-shadow: inset 0 0 0 24px rgba(43, 49, 74, 0.46), 0 0 28px rgba(255, 181, 99, 0.24);
   background: radial-gradient(circle at center, rgba(255, 206, 132, 0.1), rgba(47, 59, 94, 0.4) 70%);
+  transform: rotateX(68deg) translateZ(-42px);
+  transform-origin: center bottom;
 }
 
 .cin-top-panel {
@@ -780,15 +796,39 @@ input {
   position: absolute;
   inset: 0;
   z-index: 3;
+  transform-style: preserve-3d;
 }
 
 .cin-unit {
   position: absolute;
   width: 86px;
-  transform: translate(-50%, -50%);
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.22s ease;
   z-index: 4;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) translateZ(var(--unit-z, 0px)) scale(var(--unit-scale, 1));
+}
+
+.cin-unit-body {
+  position: relative;
+  z-index: 2;
+  transform-style: preserve-3d;
+  transform: rotateY(var(--unit-tilt, 0deg));
+  filter: blur(var(--unit-blur, 0px));
+}
+
+.cin-unit-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 54px;
+  height: 14px;
+  z-index: 1;
+  border-radius: 50%;
+  transform: translateX(-50%) rotateX(80deg) scale(var(--floor-scale, 1));
+  background: radial-gradient(ellipse at center, rgba(5, 10, 20, 0.62), rgba(5, 10, 20, 0));
+  opacity: var(--floor-opacity, 0.45);
+  pointer-events: none;
 }
 
 .cin-unit[data-cin-side="ally"] {
@@ -814,7 +854,8 @@ input {
   justify-content: center;
   font-size: 26px;
   background: linear-gradient(145deg, #5d73c8, #364b8a);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.42);
+  transform: translateZ(12px);
 }
 
 .cin-unit[data-cin-side="enemy"] .cin-unit-avatar {
@@ -852,7 +893,7 @@ input {
   position: absolute;
   left: 50%;
   top: 14%;
-  transform: translate(-50%, -40px) scale(0.85);
+  transform: translate(-50%, -40px) scale(0.85) translateZ(60px);
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid rgba(174, 224, 255, 0.6);
@@ -998,13 +1039,13 @@ input {
 
 @keyframes unitDash {
   0% {
-    transform: translate(-50%, -50%) translateX(0);
+    transform: translate(-50%, -50%) translateZ(var(--unit-z, 0px)) scale(var(--unit-scale, 1)) translateX(0);
   }
   45% {
-    transform: translate(-50%, -50%) translateX(var(--dash-x, 30px));
+    transform: translate(-50%, -50%) translateZ(calc(var(--unit-z, 0px) + 8px)) scale(calc(var(--unit-scale, 1) * 1.02)) translateX(var(--dash-x, 30px));
   }
   100% {
-    transform: translate(-50%, -50%) translateX(0);
+    transform: translate(-50%, -50%) translateZ(var(--unit-z, 0px)) scale(var(--unit-scale, 1)) translateX(0);
   }
 }
 
@@ -1105,15 +1146,15 @@ input {
 @keyframes floatDmg {
   0% {
     opacity: 0;
-    transform: translate(-50%, -8px) scale(0.8);
+    transform: translate(-50%, -8px) translateZ(56px) scale(0.8);
   }
   18% {
     opacity: 1;
-    transform: translate(-50%, -16px) scale(1.05);
+    transform: translate(-50%, -16px) translateZ(56px) scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -42px) scale(0.95);
+    transform: translate(-50%, -42px) translateZ(56px) scale(0.95);
   }
 }
 
@@ -1132,29 +1173,29 @@ input {
 @keyframes impactWave {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.3);
+    transform: translate(-50%, -50%) translateZ(18px) scale(0.3);
   }
   24% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.75);
+    transform: translate(-50%, -50%) translateZ(18px) scale(1.75);
   }
 }
 
 @keyframes slashStroke {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(var(--slash-rotate, 0deg)) scaleX(0.2);
+    transform: translate(-50%, -50%) translateZ(42px) rotate(var(--slash-rotate, 0deg)) scaleX(0.2);
   }
   35% {
     opacity: 1;
-    transform: translate(-50%, -50%) rotate(var(--slash-rotate, 0deg)) scaleX(1);
+    transform: translate(-50%, -50%) translateZ(42px) rotate(var(--slash-rotate, 0deg)) scaleX(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) rotate(var(--slash-rotate, 0deg)) scaleX(1.08);
+    transform: translate(-50%, -50%) translateZ(42px) rotate(var(--slash-rotate, 0deg)) scaleX(1.08);
   }
 }
 

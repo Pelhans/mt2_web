@@ -1292,13 +1292,23 @@ function renderCinematicUnit(unit, side, index) {
   const pos = getCinematicPosition(side, index);
   const hpRate = unit.maxHp ? clamp(unit.hp / unit.maxHp, 0, 1) : 0;
   const energyRate = clamp((unit.energy || 0) / 100, 0, 1);
+  const depthRate = clamp((pos.y - 38) / 32, 0, 1);
+  const unitScale = (0.82 + depthRate * 0.36).toFixed(3);
+  const unitZ = Math.round(-20 + depthRate * 56);
+  const unitTilt = ((side === "ally" ? -9 : 9) + (0.5 - depthRate) * (side === "ally" ? -4 : 4)).toFixed(2);
+  const unitBlur = Math.max(0, (0.5 - depthRate) * 1.2).toFixed(2);
+  const floorScale = (0.72 + depthRate * 0.5).toFixed(3);
+  const floorOpacity = (0.22 + depthRate * 0.35).toFixed(2);
   const avatarMarkup = getSafeImgMarkup("cin-unit-avatar", unit.portrait, unit.name, unit.avatar || "⚔️");
   return `
-    <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;">
-      <div class="cin-unit-avatar-wrap">${avatarMarkup}</div>
-      <div class="cin-unit-name">${unit.name}</div>
-      <div class="cin-unit-hp"><div class="cin-unit-hpfill" style="width:${Math.round(hpRate * 100)}%;"></div></div>
-      <div class="cin-unit-energy"><div class="cin-unit-energyfill" style="width:${Math.round(energyRate * 100)}%;"></div></div>
+    <div class="cin-unit ${unit.isGhost ? "ghost" : ""}" data-cin-id="${unit.id}" data-cin-side="${side}" style="left:${pos.x}%;top:${pos.y}%;--unit-scale:${unitScale};--unit-z:${unitZ}px;--unit-tilt:${unitTilt}deg;--unit-blur:${unitBlur}px;--floor-scale:${floorScale};--floor-opacity:${floorOpacity};">
+      <div class="cin-unit-floor"></div>
+      <div class="cin-unit-body">
+        <div class="cin-unit-avatar-wrap">${avatarMarkup}</div>
+        <div class="cin-unit-name">${unit.name}</div>
+        <div class="cin-unit-hp"><div class="cin-unit-hpfill" style="width:${Math.round(hpRate * 100)}%;"></div></div>
+        <div class="cin-unit-energy"><div class="cin-unit-energyfill" style="width:${Math.round(energyRate * 100)}%;"></div></div>
+      </div>
     </div>
   `;
 }
@@ -1354,6 +1364,11 @@ function playCinematicAction(attacker, target, options) {
   const wave = ((state.selectedStage - 1) % 3) + 1;
   const actionTag = isHeal ? "治疗技" : showSkill ? "必杀技" : "普通攻击";
   const battleSpeed = autoBattleRunning ? "x2.0" : "x1.0";
+  const midY = (attackerPos.y + targetPos.y) / 2;
+  const camYaw = clamp(dx * 0.12, -8, 8).toFixed(2);
+  const camPitch = clamp((58 - midY) * 0.42, -8, 8).toFixed(2);
+  const camRoll = clamp(dx * 0.05, -5, 5).toFixed(2);
+  const camZoom = (dramaticSkill ? 1.06 : showSkill ? 1.03 : 1).toFixed(3);
 
   const calcTeamRate = (team) => {
     const aliveTeam = team.filter((unit) => !unit.isGhost);
@@ -1379,9 +1394,17 @@ function playCinematicAction(attacker, target, options) {
       <div class="cin-bg"></div>
       <div class="cin-vignette"></div>
       <div class="cin-grain"></div>
-      <div class="cin-ground"></div>
-      <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
-      <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
+      <div class="cin-perspective ${dramaticSkill ? "focus" : ""}" style="--cam-yaw:${camYaw}deg;--cam-pitch:${camPitch}deg;--cam-roll:${camRoll}deg;--cam-zoom:${camZoom};">
+        <div class="cin-ground"></div>
+        <div class="cin-blackout ${dramaticSkill ? "show" : ""}"></div>
+        <div class="cin-spotlight ${dramaticSkill ? "show" : ""}" style="left:${attackerPos.x}%;top:${attackerPos.y - 8}%;"></div>
+        <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
+        <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
+        <div class="cin-impact-wave" style="left:${targetPos.x}%;top:${targetPos.y}%;"></div>
+        <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
+        <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
+        <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
+      </div>
       <div class="cin-screen-flash ${isHeal ? "heal" : showSkill ? "skill" : ""}"></div>
       <div class="cin-top-panel">
         <div class="cin-stage-title">${stageInfo.name}</div>
@@ -1403,12 +1426,6 @@ function playCinematicAction(attacker, target, options) {
       </div>
       <div class="cin-action-tag">${actionTag}</div>
       <div class="cin-skill-banner">${bannerText}</div>
-      <div class="cin-team">${allies.map((unit, index) => renderCinematicUnit(unit, "ally", index)).join("")}</div>
-      <div class="cin-team">${enemies.map((unit, index) => renderCinematicUnit(unit, "enemy", index)).join("")}</div>
-      <div class="cin-impact-wave" style="left:${targetPos.x}%;top:${targetPos.y}%;"></div>
-      <div class="cin-slash ${showSkill ? "skill" : ""}" style="left:${(attackerPos.x + targetPos.x) / 2}%;top:${(attackerPos.y + targetPos.y) / 2}%;--slash-rotate:${slashAngle}deg;--slash-len:${slashLen}px;"></div>
-      <div class="${damageClass}" style="left:${targetPos.x}%;top:${targetPos.y - 18}%;">${damageText}</div>
-      <div class="cin-combo ${showSkill ? "show" : ""}">COMBO ×${combo}</div>
       <div class="cin-bottom-bar">${allies.map((unit) => renderBottomPortrait(unit)).join("")}</div>
     </div>
   `;
