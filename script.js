@@ -905,7 +905,7 @@ function renderHeroDetail() {
     refs.upSkillBtn.disabled = state.gem < skillCost;
   }
 }
-
+// 修改推荐战力数值
 function renderStages() {
   refs.stageList.innerHTML = "";
 
@@ -914,7 +914,7 @@ function renderStages() {
     const unlocked = stage.id <= state.unlockedStage;
     const isActive = stage.id === state.selectedStage;
     const enemyCountFactor = stage.enemies.length / 3;
-    const recPower = Math.round((3200 + stage.id * 1250) * enemyCountFactor);
+    const recPower = Math.round((3200 + stage.id * 3550) * enemyCountFactor);
 
     const card = document.createElement("div");
     card.className = "stage-card";
@@ -1193,13 +1193,14 @@ function previewUnitFromHero(heroId) {
   };
 }
 
+// 修改怪物成长曲线
 function buildStageEnemies(stageId) {
   const stage = getStageConfig(stageId);
-  const grow = 1 + (stage.id - 1) * 0.34;
+  const grow = 1 + (stage.id - 1) * 1.2;
 
   return stage.enemies.map((enemyKey, idx) => {
     const base = ENEMY_LIBRARY[enemyKey];
-    const factor = grow * (1 + idx * 0.04);
+    const factor = grow * (1 + idx * 0.14);
 
     return {
       side: "enemy",
