@@ -914,7 +914,7 @@ function renderStages() {
     const unlocked = stage.id <= state.unlockedStage;
     const isActive = stage.id === state.selectedStage;
     const enemyCountFactor = stage.enemies.length / 3;
-    const recPower = Math.round((3200 + stage.id * 3550) * enemyCountFactor);
+    const recPower = Math.round((3200 + stage.id * 19550) * enemyCountFactor);
 
     const card = document.createElement("div");
     card.className = "stage-card";
@@ -1196,7 +1196,7 @@ function previewUnitFromHero(heroId) {
 // 修改怪物成长曲线
 function buildStageEnemies(stageId) {
   const stage = getStageConfig(stageId);
-  const grow = 1 + (stage.id - 1) * 1.2;
+  const grow = 1 + (stage.id - 1) * 8;
 
   return stage.enemies.map((enemyKey, idx) => {
     const base = ENEMY_LIBRARY[enemyKey];
